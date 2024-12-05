@@ -12,7 +12,9 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: "10kb" }));
+app.use(express.json({ limit: "10kb" }));// Middleware for JSON parsing
+app.use(express.json());
+// Middleware for URL-encoded form data
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
 app.use(cookieParser());
@@ -20,6 +22,7 @@ app.use(cookieParser());
 //routes declaration
 
 import userRouter from "./routes/user.routes.js";
+// Routes
 app.use("/api/v1/users", userRouter);
 
 // http://localhost:8000//api/v1/users/register || login

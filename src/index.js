@@ -58,6 +58,7 @@ dotenv.config({
 });
 import express from "express";
 const app = express();
+
 connectDB()
   .then(() => {
     // console.log("Connected to MongoDB");
