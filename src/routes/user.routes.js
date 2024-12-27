@@ -28,6 +28,7 @@ router.route("/refresh-token").post(refreshAccessToken);
 // to verify that the user is Valid
 // next batata h ki pehle verifyJWT run karo and then logoutUser Run karo
 
-
-
 export default router;
+
+// Article for differencebetween accces token and refresh token
+
