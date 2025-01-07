@@ -9,32 +9,35 @@ import { jwt } from "jsonwebtoken";
 const generateAccessTokenHere = async (userId) => {
   try {
     const user = await User.findById(userId);
-    const accessToken = await generateAccessToken();
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    const accessToken = await generateAccessToken(userId); // Pass userId if needed
     return { accessToken };
   } catch (error) {
-    throw new ApiError(
-      500,
-      "Somethign Went wrong While Generating Access Token"
-    );
+    throw new ApiError(500, "Something went wrong while generating access token");
   }
 };
 
 const generateRefreshTokenHere = async (userId) => {
   try {
     const user = await User.findById(userId);
-    const accessToken = await generateRefreshToken();
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
 
-    user.refreshToken == refreshToken;
-    user.save({ ValidateBeforSave: false });
+    const refreshToken = await generateRefreshToken(userId); // Pass userId if needed
+    user.refreshToken = refreshToken; // Correct assignment
 
-    return { accessToken };
+    await user.save({ validateBeforeSave: false }); // Correct option
+
+    return { refreshToken };
   } catch (error) {
-    throw new ApiError(
-      500,
-      "Somethign Went wrong While Generating Refresh Token"
-    );
+    throw new ApiError(500, "Something went wrong while generating refresh token");
   }
 };
+
 
 const registerUser = asyncHandler(async (req, res) => {
   // check whether request is going on postman
@@ -52,7 +55,6 @@ const registerUser = asyncHandler(async (req, res) => {
   // check for user creation (return result YES  / NO)
   // Simulate user creation (replace with database logic)
   // return res.status(201).json({ message: "User registered successfully", user: { userName, email } });
-
   // const { fullName, email, userName, password } = req.body;
   // console.log(email);
   const { fullName, email, userName, password } = req.body;
@@ -104,7 +106,7 @@ const registerUser = asyncHandler(async (req, res) => {
     userName: userName.toLowerCase(),
   });
 
-  const createdUSer = await User.findById(user._id).select(
+  const createdUSer = await User.findById(user._id)?.select(
     "-password -refreshToken"
   );
 
@@ -405,5 +407,6 @@ export {
   changeCurrentpassword,
   updateAccountDetails,
   updateUserAvatar,
-  updateCoverImage
+  updateCoverImage,
+  getUerChannelProfile
 };

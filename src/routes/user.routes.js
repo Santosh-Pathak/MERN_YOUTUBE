@@ -18,8 +18,6 @@ router.route("/register").post(
 );
 
 router.route("/login").post(loginUser);
-
-
 //SECURED ROUTER
 router.route("/logout").post(verifyJWT,logoutUser);
 router.route("/refresh-token").post(refreshAccessToken);
@@ -31,4 +29,7 @@ router.route("/refresh-token").post(refreshAccessToken);
 export default router;
 
 // Article for differencebetween accces token and refresh token
+
+
+
 
