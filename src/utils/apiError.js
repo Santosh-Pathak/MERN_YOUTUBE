@@ -1,3 +1,5 @@
+export * from "./apiError.js";
+
  class ApiError extends Error {
     constructor(
         statusCode,
@@ -7,7 +9,7 @@
     ){
         super(message)
         this.statusCode  =statusCode
-        this.data = NULL,
+        this.data = null,
         this.errors = errors
         this.message = message
         this.success = false

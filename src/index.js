@@ -56,14 +56,12 @@ import connectDB from "./db/index.js";
 dotenv.config({
   path: "./.env",
 });
-import express from "express";
-const app = express();
+import { app } from "./app.js";
 
 connectDB()
   .then(() => {
-    // console.log("Connected to MongoDB");
     app.listen(process.env.PORT || 8000, () => {
-      console.log(`Server is running on port ${process.env.PORT}`);
+      console.log(`Server is running on port ${process.env.PORT || 8000}`);
     });
   })
   .catch((error) => {

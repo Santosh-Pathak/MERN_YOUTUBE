@@ -1,6 +1,8 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
-const userSchema = mongoose.Schema(
+const userSchema = new Schema(
   {
     username: {
       type: String,
@@ -14,7 +16,7 @@ const userSchema = mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      lowecase: true,
+      lowercase: true,
       trim: true,
     },
     fullName: {
@@ -30,6 +32,10 @@ const userSchema = mongoose.Schema(
     coverImage: {
       type: String, // cloudinary url
     },
+    phone: {
+      type: String,
+      default: "",
+    },
     watchHistory: [
       {
         type: Schema.Types.ObjectId,
@@ -44,10 +50,10 @@ const userSchema = mongoose.Schema(
       type: String,
     },
   },
-  { Timestamp: true }
+  { timestamps: true }
 );
 
-userSchema.pre("save", async function () {
+userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
@@ -61,21 +67,21 @@ userSchema.methods.generateAccessToken = function () {
   const accessToken = jwt.sign(
     {
       id: this._id,
-      email: this.email,
-      username: this.username,
-      fullName: this.fullName,
     },
-    process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
+    process.env.JWT_ACCESS_SECRET || process.env.ACCESS_TOKEN_SECRET,
+    { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || "15m" }
   );
+  return accessToken;
 };
-userSchema.methods.generateRefreshTokens = function () {
+
+userSchema.methods.generateRefreshToken = function () {
   const refreshToken = jwt.sign(
     { id: this._id },
-    process.env.REFRESH_TOKEN_SECRET,
+    process.env.JWT_REFRESH_SECRET || process.env.REFRESH_TOKEN_SECRET,
     {
-      expiresIn: REFRESH_TOKEN_EXPIRY,
+      expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
     }
   );
+  return refreshToken;
 };
 export const User = mongoose.model("User", userSchema);
