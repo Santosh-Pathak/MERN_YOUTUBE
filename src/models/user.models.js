@@ -36,6 +36,10 @@ const userSchema = new Schema(
       type: String,
       default: "",
     },
+    description: {
+      type: String,
+      default: "",
+    },
     watchHistory: [
       {
         type: Schema.Types.ObjectId,

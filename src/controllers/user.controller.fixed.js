@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.models.js";
 import { Playlist } from "../models/playlist.model.js";
+import { Subscription } from "../models/subscription.model.js";
+import { Video } from "../models/video.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { uploadInCloudinary } from "../utils/cloudinary.js";
@@ -230,7 +232,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { fullName, email, phone } = req.body;
+  const { fullName, email, phone, description } = req.body;
 
   const user = await User.findById(req.user._id);
   if (!user) {
@@ -240,6 +242,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
   if (fullName) user.fullName = fullName;
   if (email) user.email = email.toLowerCase();
   if (phone) user.phone = phone;
+  if (description !== undefined) user.description = String(description || "");
 
   await user.save({ validateBeforeSave: false });
 
@@ -300,17 +303,46 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Username is missing");
   }
 
-  const channel = await User.findOne({ username: username.toLowerCase() }).select(
-    "username fullName avatar coverImage email"
-  );
+  const channelUser = await User.findOne({
+    username: username.toLowerCase(),
+  }).select("username fullName avatar coverImage email description");
 
-  if (!channel) {
+  if (!channelUser) {
     throw new ApiError(404, "Channel not found");
   }
 
+  const [subscriberCount, subscribedToCount, isSubscribed, videos] =
+    await Promise.all([
+      Subscription.countDocuments({ channel: channelUser._id }),
+      Subscription.countDocuments({ subscriber: channelUser._id }),
+      req.user
+        ? Subscription.exists({
+            subscriber: req.user._id,
+            channel: channelUser._id,
+          }).then(Boolean)
+        : Promise.resolve(false),
+      Video.find({ owner: channelUser._id, isPublished: true })
+        .sort({ createdAt: -1 })
+        .limit(12)
+        .select("title thumbnail views duration createdAt"),
+    ]);
+
+  const channel = {
+    ...channelUser.toObject(),
+    subscriberCount,
+    subscribedToCount,
+    isSubscribed,
+  };
+
   return res
     .status(200)
-    .json(new ApiResponse(200, channel, "Channel profile fetched successfully"));
+    .json(
+      new ApiResponse(
+        200,
+        { channel, videos },
+        "Channel profile fetched successfully"
+      )
+    );
 });
 
 const getWatchHistory = asyncHandler(async (req, res) => {
