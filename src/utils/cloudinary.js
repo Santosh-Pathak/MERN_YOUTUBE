@@ -1,5 +1,4 @@
 import { v2 as cloudinary } from "cloudinary";
-import { log } from "console";
 import { fs } from "fs";
 
 // this config will give the permission to upload the file  otherwise how will it know which one which account is logging and what is the username
@@ -9,7 +8,7 @@ cloudinary.config({
   cloud_api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const uploadInCloudinary = async (localFilePath) => {
+export const uploadInCloudinary = async (localFilePath) => {
   try {
     if (!localFilePath) return null;
     // upload the file in cloudinary
