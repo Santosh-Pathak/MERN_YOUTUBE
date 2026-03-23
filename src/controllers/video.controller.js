@@ -1,6 +1,7 @@
 import { isValidObjectId } from "mongoose";
 import { Video } from "../models/video.model.js";
 import { VideoView } from "../models/videoView.model.js";
+import { Like } from "../models/like.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -176,9 +177,18 @@ const getVideoById = asyncHandler(async (req, res) => {
 
   await incrementViewsDebounced(video, req);
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, video, "Video fetched successfully"));
+  const [likeCount, dislikeCount] = await Promise.all([
+    Like.countDocuments({ video: video._id, reactionType: "like" }),
+    Like.countDocuments({ video: video._id, reactionType: "dislike" }),
+  ]);
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      { video, likeCount, dislikeCount },
+      "Video fetched successfully"
+    )
+  );
 });
 
 const updateVideo = asyncHandler(async (req, res) => {
