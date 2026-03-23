@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.models.js";
+import { Playlist } from "../models/playlist.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { uploadInCloudinary } from "../utils/cloudinary.js";
@@ -78,6 +79,21 @@ const registerUser = asyncHandler(async (req, res) => {
   const createdUser = await User.findById(user._id).select(
     "-password -refreshToken"
   );
+
+  // Default private playlist for every user.
+  const existingWatchLater = await Playlist.findOne({
+    owner: user._id,
+    name: "Watch Later",
+  });
+  if (!existingWatchLater) {
+    await Playlist.create({
+      owner: user._id,
+      name: "Watch Later",
+      description: "",
+      visibility: "private",
+      videos: [],
+    });
+  }
 
   return res
     .status(201)
