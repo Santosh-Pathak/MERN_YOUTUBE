@@ -2,6 +2,8 @@ import { isValidObjectId } from "mongoose";
 import { Video } from "../models/video.model.js";
 import { VideoView } from "../models/videoView.model.js";
 import { Like } from "../models/like.model.js";
+import { Subscription } from "../models/subscription.model.js";
+import { Notification } from "../models/notification.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -149,6 +151,34 @@ const publishAVideo = asyncHandler(async (req, res) => {
     owner: req.user._id,
     isPublished: true,
   });
+
+  // Notify all subscribers of the channel that a new video is uploaded.
+  // For Step H we keep it basic: create one notification per subscriber per video.
+  const channelId = req.user._id;
+  const subscribers = await Subscription.find({ channel: channelId }).select(
+    "subscriber"
+  );
+
+  const notificationDocs = subscribers.map((s) => ({
+    user: s.subscriber,
+    channel: channelId,
+    video: created._id,
+    type: "new_video",
+    message: `New video uploaded by ${req.user.fullName || "your subscribed channel"}`,
+    isRead: false,
+  }));
+
+  // Avoid notifying the channel owner themselves (in case schema permits).
+  const filteredDocs = notificationDocs.filter(
+    (d) => String(d.user) !== String(channelId)
+  );
+
+  if (filteredDocs.length > 0) {
+    // Use ordered:false so one duplicate doesn't block the whole batch.
+    await Notification.insertMany(filteredDocs, { ordered: false }).catch(
+      () => {}
+    );
+  }
 
   return res.status(201).json(
     new ApiResponse(201, created, "Video published successfully")
